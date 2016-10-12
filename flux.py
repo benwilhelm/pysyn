@@ -1,9 +1,28 @@
+import uuid
 from pyee import EventEmitter
 
 CHANGE_EVENT = 'change'
 
-class Store(EventEmitter):
+class Dispatcher():
     
+    def __init__(self):
+        self.__callbacks = {}
+    
+    def register(self, callback):
+        key = uuid.uuid4().hex
+        self.__callbacks[key] = callback
+        return key
+    
+    def dispatch(self, action):
+        callbacks = self.__callbacks
+        for key in callbacks:
+            callbacks[key](action)
+
+
+
+
+class Store(EventEmitter):
+
     def __init__(self, dispatcher):
         EventEmitter.__init__(self)
         self.data = {}
@@ -15,7 +34,6 @@ class Store(EventEmitter):
         for key in self.__actionHandlers:
             if key == action['type']:
                 self.__actionHandlers[key](self, action)
-        print 'emitting ' + CHANGE_EVENT
         self.emit(CHANGE_EVENT, self.data)
     
     def registerAction(self, key, callback):

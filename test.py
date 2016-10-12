@@ -1,9 +1,9 @@
-from flux import Dispatcher, Store 
+from flux import Dispatcher, Store, CHANGE_EVENT
 
-d = Dispatcher.Dispatcher()
+d = Dispatcher()
 
-s1 = Store.Store(d)
-s2 = Store.Store(d)
+s1 = Store(d)
+s2 = Store(d)
 
 def action_handler(store, action):
     print 'handler'
@@ -12,7 +12,7 @@ def action_handler(store, action):
 s1.registerAction('SET_VALUE', action_handler)
 # s2.registerAction('ACTION_TWO', action_handler)
 
-@s1.on(Store.CHANGE_EVENT)
+@s1.on(CHANGE_EVENT)
 def on_change(data):
     print 'change: ' + str(data['value'])
 
