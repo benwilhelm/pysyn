@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import ui
-from store import settings as settingsStore
 
 def main():
     app_ui = ui.initialize()

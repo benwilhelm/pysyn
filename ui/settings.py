@@ -2,24 +2,23 @@ from Tkinter import *
 from appDispatcher import eventDispatcher
 
 def initialize(parent):
-    main = Frame(parent, borderwidth=1, width=150, height=600)
-    main.place(relx=1, anchor='ne')
+    main = Frame(parent, borderwidth=1, relief=SUNKEN)
+    Grid.columnconfigure(main, 0, weight=1)
     artnetToggle = ArtnetToggle(main)
-    main.pack()
+    artnetToggle.grid(row=0, column=0, sticky=W)
     return main
-
-
 
 
 class ArtnetToggle(Checkbutton):
     
     def __init__(self, master):
         self.var = IntVar()
-        c = Checkbutton(
+        Checkbutton.__init__(self, 
             master, text="Enable Artnet In",
             variable=self.var,
-            command=self.cb)
-        c.pack()
+            command=self.cb, 
+            justify=LEFT
+        )
 
     def cb(self, event=None):
         eventDispatcher.dispatch({

@@ -25,7 +25,6 @@ class Store(EventEmitter):
 
     def __init__(self, dispatcher):
         EventEmitter.__init__(self)
-        self.data = {}
         self.__actionHandlers = {}
         self.__watchHandlers = []
         self.dispatcherKey = dispatcher.register(self.handleDispatch)
@@ -34,7 +33,7 @@ class Store(EventEmitter):
         for key in self.__actionHandlers:
             if key == action['type']:
                 self.__actionHandlers[key](self, action)
-        self.emit(CHANGE_EVENT, self.data)
+        self.emit(CHANGE_EVENT)
     
     def registerAction(self, key, callback):
         self.__actionHandlers[key] = callback
