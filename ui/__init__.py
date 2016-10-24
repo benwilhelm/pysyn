@@ -1,5 +1,6 @@
 from Tkinter import *
-import settings, effectspane
+from effectspane import EffectsPane 
+import settings
 
 root = Tk()
 root.wm_title("PySyn")
@@ -12,7 +13,7 @@ def initialize():
     global __initialized
     assert (__initialized == False), "UI already initialized"
 
-    root.effectspane = effectspane.initialize(root)
+    root.effectspane = EffectsPane(root)
     root.effectspane.grid(row=0, column=0, padx=2, pady=2, sticky=N+E+W)
     
     root.settingspane = settings.initialize(root)

@@ -1,18 +1,44 @@
+import models
 from flux import Store
 from appDispatcher import eventDispatcher
+from Tkinter import IntVar
 
 __data = {
-  'pitchText' : '--'
+  'processors': {}
 }
 
 store = Store(eventDispatcher)
 
-def update_pitch_text(store, action):
-    __data['pitchText'] = str(action['value'])
+def newEffectsProcessor(store, action):
+    params = action['value']
+    processor = models.EffectsProcessor(**params)
+    processorId = processor.uuid
+    __data['processors'][processorId] = processor
 
-store.registerAction('UPDATE_PITCH', update_pitch_text)
+store.registerAction('NEW_EFFECTS_PROCESSOR', newEffectsProcessor)
+
+
+def updateEffectsProcessor(store, action):
+    params = action['value']
+    processorId = params['uuid']
+    processor = __data['processors'][processorId]
+    processor.update(params)
+
+store.registerAction('UPDATE_EFFECTS_PROCESSOR', updateEffectsProcessor)
+
+
+def destroyEffectsProcessor(store, action):
+    processorId = action['value']
+    __data['processors'].pop(processorId)
+
+store.registerAction('DESTROY_EFFECTS_PROCESSOR', destroyEffectsProcessor)
 
 
 
-def get_pitch_text():
-    return __data['pitchText']
+
+
+def getProcessors():
+    return __data['processors']
+    
+def getProcessor(id):
+    return __data['processors'].get(id, None)

@@ -38,4 +38,12 @@ class Store(EventEmitter):
     def registerAction(self, key, callback):
         self.__actionHandlers[key] = callback
 
+
+
+class Renderable():
+
+    def subscribeToStore(self, store):
+        store.on('change', self.renderUpdate)
     
+    def renderUpdate(self):
+        print "No renderUpdate method defined!"

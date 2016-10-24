@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import ui
+from appDispatcher import eventDispatcher
 
 def main():
     app_ui = ui.initialize()
