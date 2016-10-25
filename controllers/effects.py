@@ -1,7 +1,6 @@
 import models.effectsprocessor
 from flux import Store
 from appDispatcher import eventDispatcher
-from Tkinter import IntVar
 
 EffectsProcessor = models.effectsprocessor.EffectsProcessor
 

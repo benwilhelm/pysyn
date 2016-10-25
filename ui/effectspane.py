@@ -3,6 +3,7 @@ from appDispatcher import eventDispatcher
 from flux import Renderable
 import controllers.settings as settingsController
 import controllers.effects  as effectsController
+import controllers.inputdevices as inputsController
 import random
 
 class EffectsPane(Frame, Renderable, object):
@@ -75,6 +76,11 @@ class EffectsProcessor(Frame, Renderable, object):
 
         self.eqDisplayOut = EQDisplay(self)
         self.eqDisplayOut.grid(row=2, column=1, padx=2, pady=2, sticky=NW)
+        
+        # self.inputChooser = InputChooser(self)
+        # self.inputChooser.grid(row=1, column=3)
+
+        model.on('chunk', self.handleChunk)
 
         Grid.columnconfigure(self, 1, weight=1)
         self.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
@@ -98,8 +104,6 @@ class EffectsProcessor(Frame, Renderable, object):
         for prop in self.__props:
             val = getattr(model, prop)
             self.__props[prop].set(val)
-        
-        enabled = self.__props['enabled'].get()
             
     
     def dispatchUpdate(self, *args):
@@ -117,7 +121,10 @@ class EffectsProcessor(Frame, Renderable, object):
             'type': 'DESTROY_EFFECTS_PROCESSOR',
             'value': self.modelId
         })
-
+    
+    def handleChunk(self, data):
+        self.eqDisplayIn.plot(data['raw'])
+        self.eqDisplayOut.plot(data['processed'])
 
 class ScalingFrame(Frame, object):
     def __init__(self, parent, **kwargs):
@@ -159,15 +166,37 @@ class EQDisplay(Frame, object):
         
         Grid.columnconfigure(self, 0, weight=1)
         Grid.rowconfigure(self, 0, weight=1)
-        self.canv = Canvas(self, width=w, height=h, bg='#EEEEEE')
-        for left in range(w):
-            length = random.randrange(h)
-            self.canv.create_line(left, h, left, h-length, fill='black')
+        self.canvas = Canvas(self, width=w, height=h, bg='#EEEEEE')
         self.show()
 
     def show(self):
-        self.canv.grid(column=0, row=0)
+        self.canvas.grid(column=0, row=0)
         self.update() # necessary for immediate render
 
     def hide(self):
-        self.canv.grid_forget()
+        self.canvas.grid_forget()
+    
+    def plot(self, data):
+        self.canvas.delete("all")
+        hScale = self.EQ_HEIGHT
+        wScale = self.EQ_WIDTH / float(len(data))
+        for i, x in enumerate(data):
+            left = i * wScale
+            x = constrain(x, 0, 1)
+            height = x * hScale
+            eqH = self.EQ_HEIGHT
+            self.canvas.create_line(left, eqH, left, eqH-height, fill='black')
+
+class InputChooser(Listbox, object):
+    def __init__(self, parent):
+        Listbox.__init__(self, parent)
+        for audioInput in inputsController.getAudioInputs():
+            self.insert(END, audioInput.name)
+
+
+def constrain(x, min, max):
+    if x < min:
+        return min
+    if x > max:
+        return max 
+    return x
