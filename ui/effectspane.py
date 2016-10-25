@@ -55,37 +55,25 @@ class EffectsProcessor(Frame, Renderable):
         self.enableButton.grid(row=0, column=0)
         
         self.deleteButton = Button(self, command=self.dispatchDestroy, text="X")
-        self.deleteButton.grid(row=0, column=2, sticky=E)
+        self.deleteButton.grid(row=0, column=3, sticky=E)
         
         self.label = Entry(self)
-        self.label.grid(row=0, column=1, sticky=E+W)
+        self.label.grid(row=0, column=1, columnspan=2, sticky=E+W)
         
-        self.sliderFrame = Frame(self)
-        self.sliderFrame.grid(row=1, column=2)
-        
-        self.multiplier = Scale(
-            self.sliderFrame, 
-            from_=100, to=-100, 
-            variable=props['multiplier'],
-            command=self.dispatchUpdate 
-        )
-        self.multiplier.grid(row=0, column=1)
-        
-        self.offset = Scale(
-            self.sliderFrame, 
-            from_=100, to=-100,
-            variable=props['offset'],
+        self.scalingFrame = ScalingFrame(
+            self,
+            multiplierVar=props['multiplier'],
+            offsetVar=props['offset'],
+            inertiaVar=props['inertia'],
             command=self.dispatchUpdate
         )
-        self.offset.grid(row=0, column=2)
+        self.scalingFrame.grid(row=1, column=2)
+                
+        self.eqDisplayIn = EQDisplay(self)
+        self.eqDisplayIn.grid(row=1, column=1, padx=2, pady=2, sticky=NW)
 
-        self.inertia = Scale(
-            self.sliderFrame, 
-            from_=100, to=0,
-            variable=props['inertia'],
-            command=self.dispatchUpdate
-        )
-        self.inertia.grid(row=0, column=3)
+        self.eqDisplayOut = EQDisplay(self)
+        self.eqDisplayOut.grid(row=2, column=1, padx=2, pady=2, sticky=NW)
 
         Grid.columnconfigure(self, 1, weight=1)
         self.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
@@ -106,7 +94,6 @@ class EffectsProcessor(Frame, Renderable):
             self.__props[prop].set(val)
         
         enabled = self.__props['enabled'].get()
-        print 'enabled %d'%(enabled)
             
     
     def dispatchUpdate(self, *args):
@@ -124,3 +111,38 @@ class EffectsProcessor(Frame, Renderable):
             'type': 'DESTROY_EFFECTS_PROCESSOR',
             'value': self.modelId
         })
+
+
+class ScalingFrame(Frame):
+    def __init__(self, parent, **kwargs):
+        Frame.__init__(self, parent)
+        self.multiplier = Scale(
+            self, 
+            from_=100, to=-100, 
+            variable=kwargs['multiplierVar'],
+            command=kwargs['command'] 
+        )
+        self.multiplier.grid(row=0, column=1)
+        
+        self.offset = Scale(
+            self, 
+            from_=100, to=-100,
+            variable=kwargs['offsetVar'],
+            command=kwargs['command']
+        )
+        self.offset.grid(row=0, column=2)
+
+        self.inertia = Scale(
+            self, 
+            from_=100, to=0,
+            variable=kwargs['inertiaVar'],
+            command=kwargs['command']
+        )
+        self.inertia.grid(row=0, column=3)
+        
+
+class EQDisplay(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent, width=350, height=100, bg='#999999')
+        
+        
