@@ -1,28 +1,24 @@
 from Tkinter import *
 from appDispatcher import eventDispatcher
 from flux import Renderable
-import store.settings as settingsStore
-import store.effectspane as effectsStore
+import controllers.settings as settingsController
+import controllers.effects  as effectsController
 
 class EffectsPane(Frame, Renderable):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         Grid.columnconfigure(self, 0, weight=1)
         self.processors = []
-        self.__render()
-        self.subscribeToStore(effectsStore.store)
-        
-    def __render(self):
+        self.subscribeToStore(effectsController.store)        
         newButton = Button(self, text="New Processor", command=self.__newProcessor)
         newButton.grid(column=0, sticky=E)
     
     def renderUpdate(self):        
         ids = map(lambda x: x.modelId, self.processors)
-        for key, processor in effectsStore.getProcessors().iteritems():
+        for key, processor in effectsController.getProcessors().iteritems():
             if key not in ids:
                 ep = EffectsProcessor(self, processor)
                 self.processors.append(ep)
-                ep.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
 
         
 
@@ -39,7 +35,7 @@ class EffectsProcessor(Frame, Renderable):
     
     def __init__(self, parent, model):
         Frame.__init__(self, parent, borderwidth=2,  relief=GROOVE)
-        self.subscribeToStore(effectsStore.store)
+        self.subscribeToStore(effectsController.store)
         
         self.__props = {
             'enabled'    : IntVar(),
@@ -92,10 +88,11 @@ class EffectsProcessor(Frame, Renderable):
         self.inertia.grid(row=0, column=3)
 
         Grid.columnconfigure(self, 1, weight=1)
+        self.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
         self.updateProperties(model)
         
     def renderUpdate(self):
-        model = effectsStore.getProcessor(self.modelId)
+        model = effectsController.getProcessor(self.modelId)
         if model == None:
             self.destroy()
             return
@@ -107,6 +104,10 @@ class EffectsProcessor(Frame, Renderable):
         for prop in self.__props:
             val = getattr(model, prop)
             self.__props[prop].set(val)
+        
+        enabled = self.__props['enabled'].get()
+        print 'enabled %d'%(enabled)
+            
     
     def dispatchUpdate(self, *args):
         params = { 'uuid': self.modelId }

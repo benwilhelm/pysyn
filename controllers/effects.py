@@ -1,7 +1,9 @@
-import models
+import models.effectsprocessor
 from flux import Store
 from appDispatcher import eventDispatcher
 from Tkinter import IntVar
+
+EffectsProcessor = models.effectsprocessor.EffectsProcessor
 
 __data = {
   'processors': {}
@@ -11,7 +13,7 @@ store = Store(eventDispatcher)
 
 def newEffectsProcessor(store, action):
     params = action['value']
-    processor = models.EffectsProcessor(**params)
+    processor = EffectsProcessor(**params)
     processorId = processor.uuid
     __data['processors'][processorId] = processor
 
