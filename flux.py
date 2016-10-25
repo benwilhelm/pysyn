@@ -1,9 +1,10 @@
 import uuid
+import warnings
 from pyee import EventEmitter
 
 CHANGE_EVENT = 'change'
 
-class Dispatcher():
+class Dispatcher(object):
     
     def __init__(self):
         self.__callbacks = {}
@@ -21,7 +22,7 @@ class Dispatcher():
 
 
 
-class Store(EventEmitter):
+class Store(EventEmitter, object):
 
     def __init__(self, dispatcher):
         EventEmitter.__init__(self)
@@ -40,10 +41,12 @@ class Store(EventEmitter):
 
 
 
-class Renderable():
+class Renderable(object):
 
     def subscribeToStore(self, store):
         store.on('change', self.renderUpdate)
     
     def renderUpdate(self):
-        print "No renderUpdate method defined!"
+        className = type(self).__name__
+        message = "%s subscribed to store, but didn't define a renderUpdate method"%(className)
+        warnings.warn(message)

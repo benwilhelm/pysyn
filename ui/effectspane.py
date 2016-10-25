@@ -3,8 +3,9 @@ from appDispatcher import eventDispatcher
 from flux import Renderable
 import controllers.settings as settingsController
 import controllers.effects  as effectsController
+import random
 
-class EffectsPane(Frame, Renderable):
+class EffectsPane(Frame, Renderable, object):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         Grid.columnconfigure(self, 0, weight=1)
@@ -31,7 +32,7 @@ class EffectsPane(Frame, Renderable):
         })
 
 
-class EffectsProcessor(Frame, Renderable):
+class EffectsProcessor(Frame, Renderable, object):
     
     def __init__(self, parent, model):
         Frame.__init__(self, parent, borderwidth=2,  relief=GROOVE)
@@ -86,6 +87,11 @@ class EffectsProcessor(Frame, Renderable):
             return
         
         self.updateProperties(model)
+        
+        if self.__props['enabled'].get():
+            self.eqDisplayOut.show()
+        else:
+            self.eqDisplayOut.hide()
 
 
     def updateProperties(self, model):
@@ -113,7 +119,7 @@ class EffectsProcessor(Frame, Renderable):
         })
 
 
-class ScalingFrame(Frame):
+class ScalingFrame(Frame, object):
     def __init__(self, parent, **kwargs):
         Frame.__init__(self, parent)
         self.multiplier = Scale(
@@ -141,8 +147,27 @@ class ScalingFrame(Frame):
         self.inertia.grid(row=0, column=3)
         
 
-class EQDisplay(Frame):
+class EQDisplay(Frame, object):
+    
+    EQ_WIDTH=350
+    EQ_HEIGHT=100
+    
     def __init__(self, parent):
-        Frame.__init__(self, parent, width=350, height=100, bg='#999999')
+        Frame.__init__(self, parent, width=self.EQ_WIDTH, height=self.EQ_HEIGHT)
+        w = self.EQ_WIDTH
+        h = self.EQ_HEIGHT
         
-        
+        Grid.columnconfigure(self, 0, weight=1)
+        Grid.rowconfigure(self, 0, weight=1)
+        self.canv = Canvas(self, width=w, height=h, bg='#EEEEEE')
+        for left in range(w):
+            length = random.randrange(h)
+            self.canv.create_line(left, h, left, h-length, fill='black')
+        self.show()
+
+    def show(self):
+        self.canv.grid(column=0, row=0)
+        self.update() # necessary for immediate render
+
+    def hide(self):
+        self.canv.grid_forget()

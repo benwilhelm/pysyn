@@ -1,6 +1,6 @@
 import uuid
 
-class Model:
+class Model(object):
 
     _defaults = {}
     
@@ -14,3 +14,9 @@ class Model:
         for key, val in params.iteritems():
             if key in self._defaults:
                 setattr(self, key, val)
+
+    def _warnUnimplemented(self, methodName):
+        className = type(self).__name__
+        message = "%s must define a %s method"%(className, methodName)
+        warnings.warn(message)
+    
