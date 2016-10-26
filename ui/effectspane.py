@@ -20,13 +20,16 @@ class EffectsPane(Frame, Renderable, object):
         ids = map(lambda x: x.modelId, self.processors)
         for key, processor in effectsController.getProcessors().iteritems():
             if key not in ids:
-                ep = EffectsProcessor(self, processor)
-                self.processors.append(ep)
+                if processor.inputType == 'AUDIO':
+                    ep = AudioProcessor(self, processor)
+                    self.processors.append(ep)
 
         
 
     def __newProcessor(self):
-        params = {}
+        params = {
+            "inputType": "AUDIO"
+        }
         
         eventDispatcher.dispatch({
           'type': 'NEW_EFFECTS_PROCESSOR',
@@ -35,21 +38,59 @@ class EffectsPane(Frame, Renderable, object):
 
 
 class EffectsProcessor(Frame, Renderable, object):
-    
+
     def __init__(self, parent, model):
         Frame.__init__(self, parent, borderwidth=2,  relief=GROOVE)
         self.subscribeToStore(effectsController.store)
+        self.modelId = model.uuid
+    
+    def renderUpdate(self):
+        model = effectsController.getProcessor(self.modelId)
+        if model == None:
+            self.destroy()
+            return
         
-        self.__props = {
+        self.updateProperties(model)
+
+    @throttle(0.1)
+    def updateProperties(self, model):
+        for prop in self._props:
+            val = getattr(model, prop)
+            self._props[prop].set(val)
+            
+    
+    def dispatchUpdate(self, *args):
+        params = { 'uuid': self.modelId }
+        for prop, var in self._props.iteritems():
+            params[prop] = var.get()
+        
+        eventDispatcher.dispatch({
+            'type': 'UPDATE_EFFECTS_PROCESSOR',
+            'value': params
+        })
+    
+    def dispatchDestroy(self):
+        eventDispatcher.dispatch({
+            'type': 'DESTROY_EFFECTS_PROCESSOR',
+            'value': self.modelId
+        })
+
+
+
+class AudioProcessor(EffectsProcessor):
+    
+    def __init__(self, parent, model):
+        EffectsProcessor.__init__(self, parent, model)
+        
+        self._props = {
             'enabled'    : IntVar(),
             'multiplier' : IntVar(),
             'offset'     : DoubleVar(),
             'inertia'    : IntVar()
         }
         
-        props = self.__props
+        props = self._props
         
-        self.modelId = model.uuid
         self.enableButton = Checkbutton(
             self, 
             variable=props['enabled'], 
@@ -63,7 +104,7 @@ class EffectsProcessor(Frame, Renderable, object):
         self.label = Entry(self)
         self.label.grid(row=0, column=1, columnspan=2, sticky=E+W)
         
-        self.scalingFrame = ScalingFrame(
+        self.scalingFrame = AudioScalingFrame(
             self,
             multiplierVar=props['multiplier'],
             offsetVar=props['offset'],
@@ -86,48 +127,23 @@ class EffectsProcessor(Frame, Renderable, object):
         Grid.columnconfigure(self, 1, weight=1)
         self.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
         self.updateProperties(model)
+        model.startStream()
         
     def renderUpdate(self):
-        model = effectsController.getProcessor(self.modelId)
-        if model == None:
-            self.destroy()
-            return
+        EffectsProcessor.renderUpdate(self)
         
-        self.updateProperties(model)
-        
-        if self.__props['enabled'].get():
+        if self._props['enabled'].get():
             self.eqDisplayOut.show()
         else:
             self.eqDisplayOut.hide()
-
-    @throttle(0.1)
-    def updateProperties(self, model):
-        for prop in self.__props:
-            val = getattr(model, prop)
-            self.__props[prop].set(val)
-            
-    
-    def dispatchUpdate(self, *args):
-        params = { 'uuid': self.modelId }
-        for prop, var in self.__props.iteritems():
-            params[prop] = var.get()
-        
-        eventDispatcher.dispatch({
-            'type': 'UPDATE_EFFECTS_PROCESSOR',
-            'value': params
-        })
-    
-    def dispatchDestroy(self):
-        eventDispatcher.dispatch({
-            'type': 'DESTROY_EFFECTS_PROCESSOR',
-            'value': self.modelId
-        })
     
     def handleChunk(self, data):
         self.eqDisplayIn.plot(data['raw'])
         self.eqDisplayOut.plot(data['processed'])
 
-class ScalingFrame(Frame, object):
+
+
+class AudioScalingFrame(Frame, object):
     def __init__(self, parent, **kwargs):
         Frame.__init__(self, parent)
         self.multiplier = Scale(

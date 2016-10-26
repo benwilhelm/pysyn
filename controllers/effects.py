@@ -1,18 +1,17 @@
-import models.effectsprocessor
+from models.effectsprocessor import AudioProcessor, factory as effectsFactory
 from flux import Store
 from appDispatcher import eventDispatcher
 
-EffectsProcessor = models.effectsprocessor.EffectsProcessor
-
 __data = {
-  'processors': {}
+  'processors': {},
+  'streamRegistry': {}
 }
 
 store = Store(eventDispatcher)
 
 def newEffectsProcessor(store, action):
     params = action['value']
-    processor = EffectsProcessor(**params)
+    processor = effectsFactory(**params)
     processorId = processor.uuid
     __data['processors'][processorId] = processor
 

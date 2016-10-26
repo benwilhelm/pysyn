@@ -44,6 +44,7 @@ class AudioInput(InputDevice):
         return self.stream
 
     def _onChunk(self, window, frame_count, time_info, status_flags):
+        print 'stream onchunk'
         self.emit('chunk', {
           'window': window,
           'frame_count': frame_count,

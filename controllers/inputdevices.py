@@ -31,6 +31,12 @@ def getAudioInputsList():
 def getAudioInput(audioId):
     return __data['inputs']['audio'].get(audioId, None)
 
+def getInputByDeviceId(deviceId):
+    for deviceType in __data['inputs']:
+        if deviceId in __data['inputs'][deviceType]:
+            return __data['inputs'][deviceType][deviceId]
+    return None
+
 def getAudioInputByDeviceIndex(idx):
     for inp in __data['inputs']['audio'].values():
         if idx == inp.deviceIndex:
