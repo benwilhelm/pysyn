@@ -1,6 +1,7 @@
 from Tkinter import *
 from appDispatcher import eventDispatcher
 from flux import Renderable
+from util import throttle
 import controllers.settings as settingsController
 import controllers.effects  as effectsController
 import controllers.inputdevices as inputsController
@@ -99,7 +100,7 @@ class EffectsProcessor(Frame, Renderable, object):
         else:
             self.eqDisplayOut.hide()
 
-
+    @throttle(0.1)
     def updateProperties(self, model):
         for prop in self.__props:
             val = getattr(model, prop)
