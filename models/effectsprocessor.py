@@ -30,9 +30,7 @@ class EffectsProcessor(Model, EventEmitter):
         data = np.fromstring(params['window'], dtype=np.int16)
         powerSpectrum = np.absolute(np.fft.rfft(data, norm='ortho'))
         spectrum = 20 * np.log10(powerSpectrum) / 100
-        # processed = spectrum
         processed = self.processSpectrum(spectrum)
-        # print 'chunk'
         self.emit('chunk', {
             'raw': spectrum,
             'processed': processed
@@ -45,5 +43,6 @@ class EffectsProcessor(Model, EventEmitter):
         if mult < 0:
             mult = (100 + mult) * .01
         
-        processed = mult * spectrum
-        return processed
+        spectrum = mult * spectrum
+        spectrum = self.offset + spectrum
+        return spectrum

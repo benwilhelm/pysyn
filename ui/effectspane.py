@@ -43,7 +43,7 @@ class EffectsProcessor(Frame, Renderable, object):
         self.__props = {
             'enabled'    : IntVar(),
             'multiplier' : IntVar(),
-            'offset'     : IntVar(),
+            'offset'     : DoubleVar(),
             'inertia'    : IntVar()
         }
         
@@ -140,7 +140,8 @@ class ScalingFrame(Frame, object):
         
         self.offset = Scale(
             self, 
-            from_=100, to=-100,
+            from_=1, to=-1,
+            resolution=0.01,
             variable=kwargs['offsetVar'],
             command=kwargs['command']
         )
