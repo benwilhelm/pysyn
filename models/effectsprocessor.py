@@ -1,3 +1,4 @@
+from   appDispatcher import eventDispatcher
 import controllers.inputdevices as inputsController
 from   models.model import Model
 import numpy as np
@@ -27,6 +28,11 @@ class EffectsProcessor(Model, EventEmitter):
     
     def startStream(self):
         self._warnUnimplemented("startStream")
+        
+    def removeListeners(self):
+        inputDevice = self.getInputDevice()
+        inputDevice.remove_listener('chunk', self._onChunk)
+
 
 
     
@@ -37,7 +43,11 @@ class AudioProcessor(EffectsProcessor):
         'multiplier' : 1,
         'offset'     : 0,
         'inertia'    : 0,
-        'deviceId'   : None
+        'deviceId'   : None,
+        'data' : {
+            'raw' : np.array([0]),
+            'processed': np.array([0])
+        }
     }
     
     inputType = 'AUDIO'
@@ -56,14 +66,17 @@ class AudioProcessor(EffectsProcessor):
         audioDevice.on('chunk', self._onChunk)
         
     def _onChunk(self, params):
-        print '_onChunk'
         data = np.fromstring(params['window'], dtype=np.int16)
         powerSpectrum = np.absolute(np.fft.rfft(data, norm='ortho'))
         spectrum = 20 * np.log10(powerSpectrum) / 100
         processed = self.processSpectrum(spectrum)
-        self.emit('chunk', {
-            'raw': spectrum,
-            'processed': processed
+        eventDispatcher.dispatch({
+            'type': 'STREAM_CHUNK',
+            'value': {
+                'uuid': self.uuid,
+                'raw': spectrum,
+                'processed': processed
+            }
         })
     
     def processSpectrum(self, spectrum):
@@ -76,4 +89,8 @@ class AudioProcessor(EffectsProcessor):
         spectrum = mult * spectrum
         spectrum = self.offset + spectrum
         return spectrum
+    
+    
+    def __del__(self):
+        print '__del__'
         

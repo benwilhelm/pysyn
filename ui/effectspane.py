@@ -9,6 +9,7 @@ import random
 
 class EffectsPane(Frame, Renderable, object):
     def __init__(self, parent):
+        Renderable.__init__(self)
         Frame.__init__(self, parent)
         Grid.columnconfigure(self, 0, weight=1)
         self.processors = []
@@ -40,25 +41,29 @@ class EffectsPane(Frame, Renderable, object):
 class EffectsProcessor(Frame, Renderable, object):
 
     def __init__(self, parent, model):
+        Renderable.__init__(self)
         Frame.__init__(self, parent, borderwidth=2,  relief=GROOVE)
         self.subscribeToStore(effectsController.store)
         self.modelId = model.uuid
     
+    def getProcessor(self):
+        return effectsController.getProcessor(self.modelId)
+    
     def renderUpdate(self):
-        model = effectsController.getProcessor(self.modelId)
+        model = self.getProcessor()
         if model == None:
-            self.destroy()
-            return
+            self.unsubscribeFromStore(effectsController.store)
+            self.safeDestroy()
+            return False
         
         self.updateProperties(model)
+        return True
 
-    @throttle(0.1)
     def updateProperties(self, model):
         for prop in self._props:
             val = getattr(model, prop)
             self._props[prop].set(val)
             
-    
     def dispatchUpdate(self, *args):
         params = { 'uuid': self.modelId }
         for prop, var in self._props.iteritems():
@@ -113,34 +118,42 @@ class AudioProcessor(EffectsProcessor):
         )
         self.scalingFrame.grid(row=1, column=2)
                 
-        self.eqDisplayIn = EQDisplay(self)
-        self.eqDisplayIn.grid(row=1, column=1, padx=2, pady=2, sticky=NW)
+        eqDisplayIn = EQDisplay(self)
+        eqDisplayIn.grid(row=1, column=1, padx=2, pady=2, sticky=NW)
+        eqDisplayIn.streamId = self.modelId + ".raw"
+        eqDisplayIn.subscribeToStore(effectsController.streamStore)
+        self.eqDisplayIn = eqDisplayIn
 
-        self.eqDisplayOut = EQDisplay(self)
-        self.eqDisplayOut.grid(row=2, column=1, padx=2, pady=2, sticky=NW)
+        eqDisplayOut = EQDisplay(self)
+        eqDisplayOut.grid(row=2, column=1, padx=2, pady=2, sticky=NW)
+        eqDisplayOut.streamId = self.modelId + ".processed"
+        eqDisplayOut.subscribeToStore(effectsController.streamStore)
+        self.eqDisplayOut = eqDisplayOut
         
         # self.inputChooser = InputChooser(self)
         # self.inputChooser.grid(row=1, column=3)
-
-        model.on('chunk', self.handleChunk)
 
         Grid.columnconfigure(self, 1, weight=1)
         self.grid(column=0, padx=2, pady=4, ipadx=15, ipady=15, sticky=E+W)
         self.updateProperties(model)
         model.startStream()
-        
+    
+    @throttle(0.1)
     def renderUpdate(self):
-        EffectsProcessor.renderUpdate(self)
+        updated = EffectsProcessor.renderUpdate(self)
+        
+        if not updated:
+            return False
         
         if self._props['enabled'].get():
             self.eqDisplayOut.show()
         else:
             self.eqDisplayOut.hide()
-    
-    def handleChunk(self, data):
-        self.eqDisplayIn.plot(data['raw'])
-        self.eqDisplayOut.plot(data['processed'])
 
+    def dispatchDestroy(self):
+        self.eqDisplayIn.unsubscribeFromStore(effectsController.streamStore)
+        self.eqDisplayOut.unsubscribeFromStore(effectsController.streamStore)
+        EffectsProcessor.dispatchDestroy(self)
 
 
 class AudioScalingFrame(Frame, object):
@@ -172,12 +185,13 @@ class AudioScalingFrame(Frame, object):
         self.inertia.grid(row=0, column=3)
         
 
-class EQDisplay(Frame, object):
+class EQDisplay(Frame, Renderable, object):
     
     EQ_WIDTH=350
     EQ_HEIGHT=100
     
     def __init__(self, parent):
+        Renderable.__init__(self)
         Frame.__init__(self, parent, width=self.EQ_WIDTH, height=self.EQ_HEIGHT)
         w = self.EQ_WIDTH
         h = self.EQ_HEIGHT
@@ -193,6 +207,11 @@ class EQDisplay(Frame, object):
 
     def hide(self):
         self.canvas.grid_forget()
+    
+    def renderUpdate(self):
+        chunk = effectsController.getStreamChunk(self.streamId)
+        if chunk != None:
+            self.plot(chunk)
     
     def plot(self, data):
         self.canvas.delete("all")

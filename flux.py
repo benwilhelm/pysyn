@@ -1,6 +1,7 @@
 import uuid
 import warnings
 from pyee import EventEmitter
+from Tkinter import Widget
 
 CHANGE_EVENT = 'change'
 
@@ -41,12 +42,31 @@ class Store(EventEmitter, object):
 
 
 
-class Renderable(object):
+class Renderable(Widget, EventEmitter, object):
+    
+    def __init__(self):
+        EventEmitter.__init__(self)
+        self._rendering = False
 
     def subscribeToStore(self, store):
-        store.on('change', self.renderUpdate)
+        store.on('change', self.render)
+    
+    def unsubscribeFromStore(self, store):
+        store.remove_listener('change', self.render)
     
     def renderUpdate(self):
-        className = type(self).__name__
-        message = "%s subscribed to store, but didn't define a renderUpdate method"%(className)
-        warnings.warn(message)
+        pass
+    
+    def render(self):
+        self.emit('renderStart')
+        self._rendering = True
+        self.renderUpdate()
+        self._rendering = False
+        self.emit('renderEnd')
+    
+    def safeDestroy(self):
+        if self._rendering:
+            self.once('renderEnd', self.destroy)
+            return
+        
+        self.destroy()
